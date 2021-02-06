@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/select.h>
 using namespace std;
 
 #define PORT 9909
@@ -12,13 +13,18 @@ struct sockaddr_in srv;
 
 //fd_set is a structure which contains 2 elements 
 //1 unsigned int fd_count no of file descriptors which we are going to set in fd_set
-//2 SOCKET fd_array[FD_SETSIZE]; which is where we are going to                                                                          7
+//2 SOCKET fd_array[FD_SETSIZE]; which is where we are going to store socket descriptors                                                                          7
 fd_set fr,fw,fe;
+
+//fr -collection of those who are ready to read on network
+//fw -collection of those who are ready to write on network
+//fe -collection of those socket descriptors who are throwing execptions on network
 
 int main(){
 
     //variable declaration
     int nRet = 0;
+    int nMaxFd;
 
     //initializing the socket 
 
@@ -66,7 +72,44 @@ int main(){
         cout<<endl<<"Listning to local port.";
     }
 
+    nMaxFd = nSocket;
+
+    fd_set fr,fw,fe;
+
+//fr -collection of those who are ready to read on network
+//fw -collection of those who are ready to write on network
+//fe -collection of those socket descriptors who are throwing execptions on network
+
+
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+
+    FD_ZERO(&fr);
+    FD_ZERO(&fw);
+    FD_ZERO(&fe);
+
+    FD_SET(nSocket, &fr);
+    FD_SET(nSocket, &fe);
+    
+    cout<<endl<<"Before select call :"<<fr.fd_count;
+
     //keep waiting for new requests and proceed as per request which are coming
+    nRet = select(nMaxFd+1, &fr, &fw, &fe, &tv);
+    if(nRet>0){
+        //case when someone connects or communicates with  messge over a dedicted connection
+    }
+    else if(nRet==0){
+        //no connection or any communiction request made 
+        //or none of the socket descriptors re ready
+        cout<<endl<<"Nothing on port :"<< PORT ;
+    }
+    else{
+        //it failed and your application should show some useful message
+    }
+
+    cout<<endl<<"After select call :"<<fr.fds_bits;
+
 
     return 0;
 }
